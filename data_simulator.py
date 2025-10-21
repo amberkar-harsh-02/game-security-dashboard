@@ -6,7 +6,7 @@ from faker import Faker
 
 fake = Faker()
 
-API_ENDPOINT = "[http://127.0.0.1:5000/api/events](http://127.0.0.1:5000/api/events)" #Replace with your actual API endpoint
+API_ENDPOINT = "http://127.0.0.1:5000/api/events" #Replace with your actual API endpoint
 
 def generate_game_event():
     """Generates a single fake game event."""
