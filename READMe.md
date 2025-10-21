@@ -4,8 +4,6 @@
 
 This project is a full-stack web application designed to monitor real-time game event data and identify suspicious player behavior using a machine learning-powered backend. The goal is to build a practical tool that reflects the challenges faced by game security and anti-cheat teams in the live-service gaming industry.
 
-This project is being developed as part of a focused effort to build skills relevant to security and anti-cheat roles at companies like Activision Blizzard.
-
 **Current Status:** 🚧 **In Early Development** 🚧
 
 ## **Planned Features**
