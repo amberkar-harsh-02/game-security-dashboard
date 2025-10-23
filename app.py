@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 import json
 
 # Initialize the Flask application
 app = Flask(__name__)
+CORS(app)
 
 # --- DATABASE CONFIGURATION ---
 # The default username is 'postgres'
