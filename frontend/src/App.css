@@ -3,15 +3,21 @@
   background-color: #282c34;
   min-height: 100vh;
   color: white;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .App-header {
   padding: 20px;
 }
 
-table {
+.table-container {
   width: 90%;
+  margin: 20px auto;
+  text-align: left; /* <-- THIS ALIGNS THE CONTAINER CONTENT TO THE LEFT */
+}
+
+table {
+  width: 100%;
   margin: 20px auto;
   border-collapse: collapse;
 }
@@ -29,4 +35,34 @@ th {
 
 tr:nth-child(even) {
   background-color: #333;
+}
+
+/* --- NEW STYLES --- */
+h2 {
+  /* text-align: left; <-- This is no longer needed */
+  border-bottom: 2px solid #4CAF50;
+  padding-bottom: 5px;
+  display: inline-block; /* <-- THIS SHRINKS THE ELEMENT TO FIT THE TEXT */
+}
+
+.suspicious-row {
+  background-color: #BF092F !important;
+  filter: saturate(50%);
+  font-weight: bold;
+}
+
+.filter-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: -10px; /* Pulls the table closer */
+}
+
+.filter-input {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #4CAF50;
+  background-color: #333;
+  color: white;
+  font-size: 14px;
 }
