@@ -1,0 +1,32 @@
+.App {
+  text-align: center;
+  background-color: #282c34;
+  min-height: 100vh;
+  color: white;
+  font-size: 16px;
+}
+
+.App-header {
+  padding: 20px;
+}
+
+table {
+  width: 90%;
+  margin: 20px auto;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #444;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #4CAF50;
+  color: white;
+}
+
+tr:nth-child(even) {
+  background-color: #333;
+}
