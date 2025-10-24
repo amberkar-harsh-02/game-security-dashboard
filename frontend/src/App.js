@@ -5,19 +5,21 @@ import './App.css';
 // Define the URLs for your Flask API
 const EVENTS_API_URL = 'http://127.0.0.1:5000/api/get-events';
 const SUSPICIOUS_API_URL = 'http://127.0.0.1:5000/api/suspicious-players';
-const REFRESH_INTERVAL = 2000; // 5000ms = 5 seconds
+const REFRESH_INTERVAL = 5000; // 5000ms = 5 seconds
 
 function App() {
   const [events, setEvents] = useState([]);
   const [suspiciousPlayers, setSuspiciousPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState(''); // <-- NEW STATE for the filter
+  
+  // --- NEW FILTER STATE ---
+  // We now have two states for filtering
+  const [filterCategory, setFilterCategory] = useState('player_id'); // What to filter by
+  const [filterText, setFilterText] = useState(''); // The search text
+  // --- END NEW FILTER STATE ---
 
-  // This useEffect hook now handles polling
   useEffect(() => {
-    // We create one function to fetch all our data
     const fetchData = async () => {
-      // We don't set loading to true here, to avoid screen flashing on refresh
       try {
         const [eventsResponse, suspiciousResponse] = await Promise.all([
           axios.get(EVENTS_API_URL),
@@ -30,32 +32,36 @@ function App() {
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        // Only set loading to false on the *first* load
         if (loading) {
           setLoading(false);
         }
       }
     };
 
-    // --- NEW POLLING LOGIC ---
-    fetchData(); // Fetch data immediately on component load
+    fetchData(); // Fetch data immediately on load
+    const intervalId = setInterval(fetchData, REFRESH_INTERVAL); // Set up the 5-second poll
+    return () => clearInterval(intervalId); // Cleanup
+  }, [loading]); // Dependency array
 
-    // Set up an interval to re-fetch data every 5 seconds
-    const intervalId = setInterval(fetchData, REFRESH_INTERVAL);
-
-    // This is a cleanup function
-    // React runs this when the component is "unmounted" (e.g., page is closed)
-    // This prevents memory leaks by stopping the interval
-    return () => clearInterval(intervalId);
-    // --- END NEW POLLING LOGIC ---
-
-  }, [loading]); // We add 'loading' as a dependency
-
-  // --- NEW: Client-side filtering ---
-  // We create a new array of filtered events based on the 'filter' state
-  const filteredEvents = events.filter(event => 
-    event.player_id.toLowerCase().includes(filter.toLowerCase())
-  );
+  // --- NEW DYNAMIC FILTER LOGIC ---
+  const filteredEvents = events.filter(event => {
+    const filterValue = filterText.toLowerCase();
+    
+    // Get the value from the event based on the selected category
+    let eventValue;
+    if (filterCategory === 'details') {
+      // Special case: stringify the 'details' object to make it searchable
+      eventValue = JSON.stringify(event.details).toLowerCase();
+    } else {
+      // Standard cases: player_id, event_type, etc.
+      // Use .toString() to safely handle any data type
+      eventValue = (event[filterCategory] || '').toString().toLowerCase();
+    }
+    
+    // Return true if the event value includes the filter text
+    return eventValue.includes(filterValue);
+  });
+  // --- END NEW DYNAMIC FILTER LOGIC ---
 
   return (
     <div className="App">
@@ -67,7 +73,7 @@ function App() {
         ) : (
           <>
             <div className="table-container">
-              <h2>Suspicious Players (Auto-Refreshes every 2s)</h2>
+              <h2>Suspicious Players (Auto-Refreshes every 5s)</h2>
               <table>
                 <thead>
                   <tr>
@@ -92,17 +98,37 @@ function App() {
             </div>
 
             <div className="table-container">
-              {/* --- NEW FILTER INPUT BOX --- */}
+              
+              {/* --- NEW FILTER CONTROLS --- */}
               <div className="filter-container">
                 <h2>Live Event Log (Auto-Refreshes every 5s)</h2>
-                <input 
-                  type="text"
-                  placeholder="Filter by Player ID..."
-                  className="filter-input"
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                />
+                
+                <div className="filter-controls">
+                  <label htmlFor="filter-category" className="filter-label">Filter by:</label>
+                  <select 
+                    id="filter-category"
+                    className="filter-select"
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                  >
+                    <option value="player_id">Player ID</option>
+                    <option value="event_type">Event Type</option>
+                    <option value="timestamp">Timestamp</option>
+                    <option value="event_id">Event ID</option>
+                    <option value="details">Details</option>
+                  </select>
+                  
+                  <input 
+                    type="text"
+                    placeholder="Search value..."
+                    className="filter-input"
+                    value={filterText}
+                    onChange={(e) => setFilterText(e.target.value)}
+                  />
+                </div>
               </div>
+              {/* --- END FILTER CONTROLS --- */}
+              
               <table>
                 <thead>
                   <tr>
@@ -114,7 +140,6 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* --- MODIFIED: We now map over 'filteredEvents' --- */}
                   {filteredEvents.map((event) => (
                     <tr key={event.event_id}>
                       <td>{event.event_id}</td>

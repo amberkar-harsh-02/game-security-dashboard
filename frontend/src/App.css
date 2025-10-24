@@ -13,7 +13,7 @@
 .table-container {
   width: 90%;
   margin: 20px auto;
-  text-align: left; /* <-- THIS ALIGNS THE CONTAINER CONTENT TO THE LEFT */
+  text-align: left; /* Aligns container content to the left */
 }
 
 table {
@@ -37,14 +37,13 @@ tr:nth-child(even) {
   background-color: #333;
 }
 
-/* --- NEW STYLES --- */
 h2 {
-  /* text-align: left; <-- This is no longer needed */
   border-bottom: 2px solid #4CAF50;
   padding-bottom: 5px;
-  display: inline-block; /* <-- THIS SHRINKS THE ELEMENT TO FIT THE TEXT */
+  display: inline-block; /* Shrinks border to fit text */
 }
 
+/* Your custom style for suspicious rows */
 .suspicious-row {
   background-color: #BF092F !important;
   filter: saturate(50%);
@@ -58,6 +57,30 @@ h2 {
   margin-bottom: -10px; /* Pulls the table closer */
 }
 
+/* --- NEW STYLES for the filter controls --- */
+
+.filter-controls {
+  display: flex;
+  gap: 10px; /* Adds space between the dropdown and the input */
+  align-items: center; /* Vertically aligns the label, select, and input */
+}
+
+.filter-label {
+  font-size: 14px;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.filter-select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #4CAF50;
+  background-color: #333;
+  color: white;
+  font-size: 14px;
+  height: 35px; /* Match input height */
+}
+
 .filter-input {
   padding: 8px;
   border-radius: 4px;
@@ -65,4 +88,6 @@ h2 {
   background-color: #333;
   color: white;
   font-size: 14px;
+  height: 35px; /* Explicit height */
 }
+
