@@ -11,7 +11,7 @@ fake = Faker()
 API_ENDPOINT = "http://127.0.0.1:5000/api/events"
 
 # Define our suspicious player
-SUSPICIOUS_PLAYER_ID = "player_999"
+SUSPICIOUS_PLAYER_ID = "player_foresaken"
 NUM_HEADSHOTS = 5
 NUM_MOVES = 2
 
