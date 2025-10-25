@@ -2,15 +2,15 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import json
-import pandas as pd  # <-- NEW IMPORT
-import numpy as np   # <-- NEW IMPORT
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import IsolationForest
 
 # Initialize the Flask application
 app = Flask(__name__)
 CORS(app) # Enable CORS for all routes
 
 # --- DATABASE CONFIGURATION ---
-# The default username is 'postgres'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Harsh%408866@localhost:8866/game_security'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -78,10 +78,9 @@ def get_events():
     return jsonify(events_list)
 
 
-# --- ML ANALYSIS ENDPOINT ---
+# --- UPDATED: ML ANALYSIS ENDPOINT (Isolation Forest) ---
 @app.route("/api/suspicious-players", methods=['GET'])
 def get_suspicious_players():
-    # --- This is the logic from ml_analysis.py ---
     events = Event.query.all()
     
     if not events:
@@ -96,49 +95,53 @@ def get_suspicious_players():
 
     df = pd.DataFrame(data)
     
-    if df.empty:
-        return jsonify([]) # Return empty list if no data
+    if df.empty or len(df) < 5: # Need some data to model
+        return jsonify([]) 
     
-    # 1. Group by player_id and count specific events
+    # 1. Feature Engineering:
+    #    We will create a feature vector for each player
+    #    The features will be the *counts* of each event type
     player_stats = df.groupby('player_id')['event_type'].value_counts().unstack(fill_value=0)
     
-    # Ensure 'headshot' and 'player_move' columns exist after unstacking
-    if 'headshot' not in player_stats.columns:
-        player_stats['headshot'] = 0
-    if 'player_move' not in player_stats.columns:
-        player_stats['player_move'] = 0
+    # Get all possible event types as features
+    features = player_stats.columns.tolist()
 
-    # 2. Engineer our "suspicion" feature
-    player_stats['hs_per_move_ratio'] = np.where(
-        player_stats['player_move'] > 0, 
-        player_stats['headshot'] / player_stats['player_move'],
-        0
-    )
+    if not features:
+        return jsonify([]) # No features to analyze
+
+    # 2. Train the Model
+    #    IsolationForest works well for anomaly detection.
+    #    'contamination' is the expected % of anomalies (e.g., 5%)
+    #    Adjust 'contamination' based on how many players you want to flag
+    model = IsolationForest(contamination=0.05, random_state=42)
+    model.fit(player_stats)
     
-    # 3. Define our "suspicious" threshold
-    SUSPICIOUS_THRESHOLD = 1.0
+    # 3. Get Predictions
+    #    The model predicts -1 for anomalies (suspicious) and 1 for inliers (normal)
+    predictions = model.predict(player_stats)
+    
+    # Add predictions to our player_stats DataFrame
+    player_stats['is_suspicious'] = predictions
     
     # 4. Filter for suspicious players
-    suspicious_players_df = player_stats[
-        player_stats['hs_per_move_ratio'] > SUSPICIOUS_THRESHOLD
-    ].sort_values(by='hs_per_move_ratio', ascending=False)
+    suspicious_players_df = player_stats[player_stats['is_suspicious'] == -1]
     
     # 5. Convert DataFrame to a JSON-friendly format
     suspicious_players_list = []
     for player_id, stats in suspicious_players_df.iterrows():
+        # Create a dictionary of the player's event counts
+        event_counts = {col: int(stats[col]) for col in features}
+        
         suspicious_players_list.append({
             'player_id': player_id,
-            'headshots': int(stats['headshot']),
-            'moves': int(stats['player_move']),
-            'ratio': round(stats['hs_per_move_ratio'], 2)
+            'reason': 'Anomaly Detected',
+            'event_counts': event_counts
         })
-    # --- End of analysis logic ---
     
     return jsonify(suspicious_players_list)
-# --- END OF NEW ENDPOINT ---
+# --- END OF UPDATED ENDPOINT ---
 
 
 if __name__ == '__main__':
-    # We must set use_reloader=False because the DB tables
-    # are created in the main thread.
     app.run(debug=True, use_reloader=False)
+

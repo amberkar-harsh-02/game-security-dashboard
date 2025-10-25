@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './App.css';
+import './App.css'; // Correct import path assuming App.css is in the same src directory
 
 // Define the URLs for your Flask API
 const EVENTS_API_URL = 'http://127.0.0.1:5000/api/get-events';
@@ -11,27 +11,28 @@ function App() {
   const [events, setEvents] = useState([]);
   const [suspiciousPlayers, setSuspiciousPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // --- NEW FILTER STATE ---
-  // We now have two states for filtering
+
+  // Filter state variables
   const [filterCategory, setFilterCategory] = useState('player_id'); // What to filter by
   const [filterText, setFilterText] = useState(''); // The search text
-  // --- END NEW FILTER STATE ---
 
   useEffect(() => {
+    // Function to fetch data from both endpoints
     const fetchData = async () => {
+      // Don't set loading to true on refresh to avoid flickering
       try {
         const [eventsResponse, suspiciousResponse] = await Promise.all([
           axios.get(EVENTS_API_URL),
           axios.get(SUSPICIOUS_API_URL)
         ]);
-        
+
         setEvents(eventsResponse.data);
         setSuspiciousPlayers(suspiciousResponse.data);
 
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
+        // Set loading to false only on the initial load
         if (loading) {
           setLoading(false);
         }
@@ -39,57 +40,56 @@ function App() {
     };
 
     fetchData(); // Fetch data immediately on load
-    const intervalId = setInterval(fetchData, REFRESH_INTERVAL); // Set up the 5-second poll
-    return () => clearInterval(intervalId); // Cleanup
-  }, [loading]); // Dependency array
+    // Set up interval for polling
+    const intervalId = setInterval(fetchData, REFRESH_INTERVAL);
 
-  // --- NEW DYNAMIC FILTER LOGIC ---
+    // Cleanup function to clear interval on unmount
+    return () => clearInterval(intervalId);
+  }, [loading]); // Dependency array includes loading
+
+  // Filter events based on selected category and text
   const filteredEvents = events.filter(event => {
     const filterValue = filterText.toLowerCase();
-    
-    // Get the value from the event based on the selected category
     let eventValue;
+
+    // Handle searching within the 'details' object
     if (filterCategory === 'details') {
-      // Special case: stringify the 'details' object to make it searchable
       eventValue = JSON.stringify(event.details).toLowerCase();
     } else {
-      // Standard cases: player_id, event_type, etc.
-      // Use .toString() to safely handle any data type
+      // Handle standard string/number columns
       eventValue = (event[filterCategory] || '').toString().toLowerCase();
     }
-    
-    // Return true if the event value includes the filter text
+
     return eventValue.includes(filterValue);
   });
-  // --- END NEW DYNAMIC FILTER LOGIC ---
 
   return (
     <div className="App">
       <header className="App-header">
         <h1>Game Security Dashboard</h1>
-        
+
         {loading ? (
           <p>Loading data...</p>
         ) : (
           <>
+            {/* Suspicious Players Table */}
             <div className="table-container">
-              <h2>Suspicious Players (Auto-Refreshes every 5s)</h2>
+              <h2>Suspicious Players (Flagged by ML Model)</h2>
               <table>
                 <thead>
                   <tr>
                     <th>Player ID</th>
-                    <th>Headshots</th>
-                    <th>Moves</th>
-                    <th>HS/Move Ratio</th>
+                    <th>Reason</th>
+                    <th>Event Counts (as features)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {suspiciousPlayers.map((player) => (
                     <tr key={player.player_id} className="suspicious-row">
                       <td>{player.player_id}</td>
-                      <td>{player.headshots}</td>
-                      <td>{player.moves}</td>
-                      <td>{player.ratio}</td>
+                      <td>{player.reason}</td>
+                      {/* Display the event counts object */}
+                      <td>{JSON.stringify(player.event_counts)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -97,15 +97,14 @@ function App() {
               {suspiciousPlayers.length === 0 && <p>No suspicious players found.</p>}
             </div>
 
+            {/* Live Event Log Table */}
             <div className="table-container">
-              
-              {/* --- NEW FILTER CONTROLS --- */}
               <div className="filter-container">
                 <h2>Live Event Log (Auto-Refreshes every 5s)</h2>
-                
+                {/* Filter Controls */}
                 <div className="filter-controls">
                   <label htmlFor="filter-category" className="filter-label">Filter by:</label>
-                  <select 
+                  <select
                     id="filter-category"
                     className="filter-select"
                     value={filterCategory}
@@ -117,8 +116,8 @@ function App() {
                     <option value="event_id">Event ID</option>
                     <option value="details">Details</option>
                   </select>
-                  
-                  <input 
+
+                  <input
                     type="text"
                     placeholder="Search value..."
                     className="filter-input"
@@ -127,8 +126,8 @@ function App() {
                   />
                 </div>
               </div>
-              {/* --- END FILTER CONTROLS --- */}
-              
+
+              {/* Event Log Table */}
               <table>
                 <thead>
                   <tr>
