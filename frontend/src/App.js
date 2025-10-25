@@ -1,89 +1,90 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-// --- NEW: Import Recharts components ---
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-// --- END NEW ---
-import './App.css'; // Corrected import path
+// Import Recharts components
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import './App.css'; // Corrected import path for CSS
 
 // Define the URLs for your Flask API
+// --- IMPORTANT: Double-check this IP address. If your Flask server is on the same machine, it should be 127.0.0.1 ---
 const EVENTS_API_URL = 'http://127.0.0.1:5000/api/get-events';
 const SUSPICIOUS_API_URL = 'http://127.0.0.1:5000/api/suspicious-players';
-const SUMMARY_API_URL = 'http://127.0.0.1:5000/api/event-summary'; // <-- NEW API URL
+const SUMMARY_API_URL = 'http://127.0.0.1:5000/api/event-summary';
+// --- End IP check ---
 const REFRESH_INTERVAL = 5000; // 5 seconds
 
 function App() {
   const [events, setEvents] = useState([]);
   const [suspiciousPlayers, setSuspiciousPlayers] = useState([]);
-  const [chartData, setChartData] = useState([]); // <-- NEW STATE for chart
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterCategory, setFilterCategory] = useState('player_id');
   const [filterText, setFilterText] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
-      // Don't set loading on subsequent fetches to avoid flicker
-      // setLoading(true); <--- Commented out or removed for polling
-
       try {
-        // Fetch all three datasets in parallel
         const [eventsResponse, suspiciousResponse, summaryResponse] = await Promise.all([
           axios.get(EVENTS_API_URL),
           axios.get(SUSPICIOUS_API_URL),
-          axios.get(SUMMARY_API_URL) // <-- NEW FETCH CALL
+          axios.get(SUMMARY_API_URL)
         ]);
 
         setEvents(eventsResponse.data);
         setSuspiciousPlayers(suspiciousResponse.data);
-
-        // Check if summary data is valid before setting state
-        if (summaryResponse.data && !summaryResponse.data.error) {
-            setChartData(summaryResponse.data); // <-- SAVE CHART DATA
-        } else {
-             console.error("Error fetching summary data:", summaryResponse.data.error);
-             setChartData([]); // Set to empty on error
-        }
-
+        setChartData(summaryResponse.data);
 
       } catch (error) {
         console.error("Error fetching data:", error);
-        // Handle case where summary might fail but others succeed
+        // Specifically check the error source if needed
         if (error.config && error.config.url === SUMMARY_API_URL) {
-            console.error("Could not load chart data due to network or server error.");
-             setChartData([]); // Set to empty on fetch error
+            console.error("Could not load chart data.");
+             setChartData([]); // Set to empty on error for chart
+        } else if (error.config && error.config.url === SUSPICIOUS_API_URL) {
+            console.error("Could not load suspicious player data.");
+            setSuspiciousPlayers([]); // Set to empty on error for suspicious players
+        } else if (error.config && error.config.url === EVENTS_API_URL) {
+             console.error("Could not load event data.");
+             setEvents([]); // Set to empty on error for events
+        } else {
+             // General error or error from multiple sources
+             setEvents([]);
+             setSuspiciousPlayers([]);
+             setChartData([]);
         }
-
       } finally {
-        // Set loading to false only on the initial load
         if (loading) setLoading(false);
       }
     };
 
-    fetchData(); // Fetch immediately on component mount
-    const intervalId = setInterval(fetchData, REFRESH_INTERVAL); // Set up polling interval
+    fetchData(); // Fetch immediately
+    const intervalId = setInterval(fetchData, REFRESH_INTERVAL); // Poll every 5s
+    return () => clearInterval(intervalId); // Cleanup interval
+  }, [loading]); // Dependency array
 
-    // Cleanup function to clear the interval when the component unmounts
-    return () => clearInterval(intervalId);
-  }, [loading]); // Dependency array includes loading to set it false initially
-
-  // Filter logic for the event log table
   const filteredEvents = events.filter(event => {
     const filterValue = filterText.toLowerCase();
     let eventValue;
     if (filterCategory === 'details') {
-      eventValue = JSON.stringify(event.details).toLowerCase();
+      // Safely stringify details, handle if details is not an object or null
+      try {
+        eventValue = JSON.stringify(event.details || {}).toLowerCase();
+      } catch (e) {
+        eventValue = ''; // Fallback if stringify fails
+      }
     } else {
+      // Safely access potentially missing keys and convert to string
       eventValue = (event[filterCategory] || '').toString().toLowerCase();
     }
     return eventValue.includes(filterValue);
   });
 
-  // Define colors for the chart bars for better visual distinction
+  // Define colors for the chart lines
   const chartColors = {
-      player_login: "#8884d8",    // Purple
-      player_logout: "#82ca9d",   // Green
-      player_move: "#ffc658",     // Yellow
-      item_pickup: "#ff7300",     // Orange
-      headshot: "#d0ed57"         // Lime Green
+      player_login: "#8884d8",
+      player_logout: "#82ca9d",
+      player_move: "#ffc658",
+      item_pickup: "#ff7300",
+      headshot: "#d0ed57"
   };
 
   return (
@@ -107,55 +108,58 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {suspiciousPlayers.map((player) => (
+                  {/* Add check for suspiciousPlayers being an array */}
+                  {Array.isArray(suspiciousPlayers) && suspiciousPlayers.map((player) => (
                     <tr key={player.player_id} className="suspicious-row">
                       <td>{player.player_id}</td>
                       <td>{player.reason}</td>
-                      {/* Stringify the event counts object for display */}
-                      <td>{JSON.stringify(player.event_counts)}</td>
+                      {/* Safely stringify event_counts */}
+                      <td>{JSON.stringify(player.event_counts || {})}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-               {suspiciousPlayers.length === 0 && <p>No suspicious players found.</p>}
+               {/* Add check for suspiciousPlayers being an array */}
+               {(!Array.isArray(suspiciousPlayers) || suspiciousPlayers.length === 0) && <p>No suspicious players found.</p>}
             </div>
 
-            {/* --- NEW: Event Summary Chart --- */}
+            {/* Event Summary Chart */}
             <div className="chart-container">
-              <h2>Hourly Event Summary</h2>
-              {chartData && chartData.length > 0 ? (
-                // ResponsiveContainer makes the chart adapt to screen size
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={chartData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#555" /> {/* Grid line color */}
-                    <XAxis dataKey="timestamp" stroke="#ccc"/> {/* Axis label color */}
-                    <YAxis allowDecimals={false} stroke="#ccc"/> {/* Axis label color */}
-                    {/* Tooltip custom style can be added via content prop if needed */}
-                    <Tooltip contentStyle={{ backgroundColor: '#282c34', border: '1px solid #4CAF50' }} itemStyle={{ color: 'white' }}/>
-                    <Legend wrapperStyle={{ color: '#ccc' }}/> {/* Legend text color */}
-                    {/* Create a Bar component for each event type, stack them */}
-                    <Bar dataKey="player_login" fill={chartColors.player_login} name="Logins" stackId="a" />
-                    <Bar dataKey="player_logout" fill={chartColors.player_logout} name="Logouts" stackId="a" />
-                    <Bar dataKey="player_move" fill={chartColors.player_move} name="Moves" stackId="a" />
-                    <Bar dataKey="item_pickup" fill={chartColors.item_pickup} name="Pickups" stackId="a" />
-                    <Bar dataKey="headshot" fill={chartColors.headshot} name="Headshots" stackId="a" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p>No summary data available to display chart. (Try generating more events)</p>
-              )}
+              <h2>Hourly Event Summary (All Time)</h2>
+               {/* Add check for chartData being an array */}
+              {Array.isArray(chartData) && chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart
+                      data={chartData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      {/* --- XAxis Tweaks --- */}
+                      <XAxis
+                        dataKey="timestamp"
+                        padding={{ left: 20, right: 20 }} // Add padding
+                       />
+                       {/* --- End XAxis --- */}
+                      <YAxis allowDecimals={false} />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="player_login" stroke={chartColors.player_login} name="Logins" dot={false} />
+                      <Line type="monotone" dataKey="player_logout" stroke={chartColors.player_logout} name="Logouts" dot={false} />
+                      <Line type="monotone" dataKey="player_move" stroke={chartColors.player_move} name="Moves" dot={false} />
+                      <Line type="monotone" dataKey="item_pickup" stroke={chartColors.item_pickup} name="Pickups" dot={false} />
+                      <Line type="monotone" dataKey="headshot" stroke={chartColors.headshot} name="Headshots" dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+               ) : (
+                  <p>No event summary data available to display chart. Run simulators to generate data.</p>
+               )}
             </div>
-            {/* --- END NEW CHART --- */}
 
 
             {/* Live Event Log Table */}
             <div className="table-container">
               <div className="filter-container">
                  <h2>Live Event Log (Auto-Refreshes every 5s)</h2>
-                {/* Filter Controls */}
                  <div className="filter-controls">
                   <label htmlFor="filter-category" className="filter-label">Filter by:</label>
                   <select
@@ -180,7 +184,6 @@ function App() {
                   />
                 </div>
               </div>
-              {/* Event Log Table */}
                <table>
                 <thead>
                   <tr>
@@ -192,18 +195,21 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredEvents.map((event) => (
+                   {/* Add check for filteredEvents being an array */}
+                  {Array.isArray(filteredEvents) && filteredEvents.map((event) => (
                     <tr key={event.event_id}>
                       <td>{event.event_id}</td>
                       <td>{event.player_id}</td>
                       <td>{event.event_type}</td>
                       <td>{event.timestamp}</td>
-                      <td>{JSON.stringify(event.details)}</td>
+                       {/* Safely stringify details */}
+                      <td>{JSON.stringify(event.details || {})}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {filteredEvents.length === 0 && <p>No events match filter.</p>}
+               {/* Add check for filteredEvents being an array */}
+              {(!Array.isArray(filteredEvents) || filteredEvents.length === 0) && <p>No events match filter.</p>}
             </div>
           </>
         )}
@@ -213,3 +219,4 @@ function App() {
 }
 
 export default App;
+

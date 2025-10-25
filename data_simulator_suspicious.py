@@ -1,68 +1,75 @@
 import requests
 import json
-from faker import Faker
 import random
 import time
+# --- Import datetime ---
+from datetime import datetime, timezone
+from faker import Faker
 
-# Initialize Faker to generate fake data
 fake = Faker()
 
-# The URL of the API endpoint on your Flask server
+# Your API endpoint
 API_ENDPOINT = "http://127.0.0.1:5000/api/events"
 
-# Define our suspicious player
-SUSPICIOUS_PLAYER_ID = "player_foresaken"
-NUM_HEADSHOTS = 5
-NUM_MOVES = 2
+# Define the suspicious player ID
+SUSPICIOUS_PLAYER_ID = "player_tenz"
 
-def create_event(player_id, event_type):
-    """Generates a specific game event."""
-    return {
+def send_test_event(event_type):
+    """Generates and sends a test event for the suspicious player."""
+    # --- UPDATED: Generate standard YYYY-MM-DDTHH:MM:SSZ format ---
+    current_time_utc_dt = datetime.now(timezone.utc)
+    # Use isoformat, specify seconds, and replace +00:00 offset with Z if present
+    current_time_utc = current_time_utc_dt.isoformat(timespec='seconds').replace('+00:00', 'Z')
+    # --- END UPDATE ---
+
+    event = {
         'event_id': fake.uuid4(),
-        'player_id': player_id,
+        'player_id': SUSPICIOUS_PLAYER_ID,
         'event_type': event_type,
-        'timestamp': fake.iso8601(),
+        'timestamp': current_time_utc, # Use clean time
         'details': {
-            'location': f"({random.randint(0, 100)}, {random.randint(0, 100)})",
-            'weapon': random.choice(['pistol', 'rifle', 'sniper']) if event_type == 'headshot' else None
+            'location': f"({random.randint(0, 100)}, {random.randint(0, 100)})"
         }
     }
+    # Add weapon only for headshots
+    if event_type == 'headshot':
+        event['details']['weapon'] = 'sniper' # Be consistent
 
-def send_event(event):
-    """Sends a single event to the API endpoint."""
     try:
         response = requests.post(API_ENDPOINT, json=event)
         if response.status_code == 201:
-            print(f"Successfully sent event type: {event['event_type']} for player {event['player_id']}")
+            print(f"Sent {event_type} event for {SUSPICIOUS_PLAYER_ID} at {current_time_utc}")
         else:
-            print(f"Failed to send event. Status code: {response.status_code}")
+            print(f"Failed to send {event_type} event. Status: {response.status_code}")
+
     except requests.exceptions.ConnectionError:
-        print(f"Connection Error: Could not connect to the server at {API_ENDPOINT}.")
-        print("Please ensure the Flask server (app.py) is running.")
-        return False
-    return True
+        print("Connection Error: Flask server not running?")
+        return False # Indicate failure
+    return True # Indicate success
 
 if __name__ == "__main__":
-    print(f"--- Starting Suspicious Player Test ---")
-    print(f"Injecting test data for player: {SUSPICIOUS_PLAYER_ID}")
-    
-    # Send 5 'headshot' events
-    print(f"\nSending {NUM_HEADSHOTS} 'headshot' events...")
-    for _ in range(NUM_HEADSHOTS):
-        event = create_event(SUSPICIOUS_PLAYER_ID, 'headshot')
-        if not send_event(event):
+    print(f"--- Sending test data for suspicious player: {SUSPICIOUS_PLAYER_ID} ---")
+
+    # Send 5 headshots
+    print("\nSending 5 headshot events...")
+    success = True
+    for _ in range(5):
+        if not send_test_event('headshot'):
+            success = False
             break
         time.sleep(0.1) # Small delay
 
-    # Send 2 'player_move' events
-    print(f"\nSending {NUM_MOVES} 'player_move' events...")
-    for _ in range(NUM_MOVES):
-        event = create_event(SUSPICIOUS_PLAYER_ID, 'player_move')
-        if not send_event(event):
-            break
-        time.sleep(0.1) # Small delay
+    # Send 2 moves
+    if success:
+        print("\nSending 2 move events...")
+        for _ in range(2):
+            if not send_test_event('player_move'):
+                success = False
+                break
+            time.sleep(0.1)
 
-    print("\n--- Test Data Injected ---")
-    print(f"Test player {SUSPICIOUS_PLAYER_ID} now has {NUM_HEADSHOTS} headshots and {NUM_MOVES} moves.")
-    print("Ratio: ", NUM_HEADSHOTS / NUM_MOVES)
-    print("\nPlease REFRESH your React dashboard (http://localhost:3000) to see the results.")
+    if success:
+        print("\n--- Test data sent successfully ---")
+    else:
+        print("\n--- Failed to send all test data ---")
+
