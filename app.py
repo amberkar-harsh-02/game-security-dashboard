@@ -164,7 +164,7 @@ def get_event_summary():
         df = df.set_index('timestamp')
 
         # Aggregate by 15-minute intervals (Adjust freq if needed)
-        summary = df.groupby(pd.Grouper(freq='15min'))['event_type'].value_counts().unstack(fill_value=0)
+        summary = df.groupby(pd.Grouper(freq='2min'))['event_type'].value_counts().unstack(fill_value=0)
         if summary.empty:
              return jsonify([])
 
