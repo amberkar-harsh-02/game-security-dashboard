@@ -88,9 +88,10 @@ def get_events():
         return jsonify({"error": "Failed to fetch events"}), 500
 
 
-# --- TUNED ISOLATION FOREST ENDPOINT ---
+# --- ML ANALYSIS ENDPOINT (Corrected Kill Logic) ---
 @app.route("/api/suspicious-players", methods=['GET'])
 def get_suspicious_players():
+    # print("\n--- Request received for /api/suspicious-players ---") # Optional Debug
     try:
         events = Event.query.all()
         if not events: return jsonify([])
@@ -99,35 +100,83 @@ def get_suspicious_players():
         df = pd.DataFrame(data)
         if df.empty: return jsonify([])
 
+        # 1. Aggregate Raw Counts
         player_stats = df.groupby('player_id')['event_type'].value_counts().unstack(fill_value=0)
 
-        all_event_types = ['player_login', 'player_logout', 'player_move', 'item_pickup', 'headshot']
-        for event_type in all_event_types:
-            if event_type not in player_stats.columns:
-                player_stats[event_type] = 0
+        # Ensure essential columns for calculation exist
+        for col in ['kill', 'death', 'headshot']:
+            if col not in player_stats.columns:
+                player_stats[col] = 0
 
-        features = player_stats[all_event_types]
+        # --- 2. Feature Engineering (Corrected Logic) ---
+        # Calculate Total Kills = 'kill' events + 'headshot' events
+        player_stats['total_kills'] = player_stats['kill'] + player_stats['headshot']
 
-        if len(features) < 2:
-            return jsonify([])
+        # Calculate KDR using total_kills (handle division by zero)
+        player_stats['kdr'] = np.where(
+            player_stats['death'] > 0,
+            player_stats['total_kills'] / player_stats['death'],
+            player_stats['total_kills'] # Assign total kills if deaths are 0
+        )
+        # Calculate Headshot Ratio using total_kills (handle division by zero)
+        player_stats['hs_ratio'] = np.where(
+            player_stats['total_kills'] > 0,
+            player_stats['headshot'] / player_stats['total_kills'],
+            0 # Assign 0 if total_kills are 0
+        )
+        # --- End Corrected Feature Engineering ---
 
-        model = IsolationForest(contamination=0.05, random_state=42)
-        model.fit(features)
-        predictions = model.predict(features)
+        # 3. Select Features for the Model
+        # Use the new calculated ratios and total kills
+        feature_columns = ['kdr', 'hs_ratio', 'total_kills', 'death'] # Add other raw counts if desired
+        # Make sure all feature columns exist in player_stats before selection
+        for col in feature_columns:
+            if col not in player_stats.columns:
+                player_stats[col] = 0 # Should already exist due to logic above, but safer
+        features_df = player_stats[feature_columns]
 
+        # Clean up potential NaN/inf values
+        features_df = features_df.fillna(0)
+        # Replace infinite KDR (if total_kills > 0 and deaths = 0) with total_kills
+        features_df.loc[features_df['kdr'] == np.inf, 'kdr'] = features_df.loc[features_df['kdr'] == np.inf, 'total_kills']
+
+
+        if len(features_df) < 2:
+            return jsonify([]) # Model needs at least 2 samples
+
+        # 4. Train Isolation Forest Model
+        model = IsolationForest(contamination=0.05, random_state=42) # Adjust contamination if needed
+        model.fit(features_df)
+        predictions = model.predict(features_df)
+        # print(f"DEBUG (Suspicious): Predictions array: {predictions}") # Optional Debug
+
+        # 5. Filter for Anomalies
         suspicious_mask = (predictions == -1)
-        suspicious_players_df = player_stats[suspicious_mask]
+        suspicious_player_ids = features_df[suspicious_mask].index # Get IDs from the features DF index
 
+        # 6. Format Output
         suspicious_players_list = []
-        for player_id, stats in suspicious_players_df.iterrows():
-            event_counts_data = {etype: int(stats.get(etype, 0)) for etype in all_event_types}
+        for player_id in suspicious_player_ids:
+            # Get the stats for this player from the features dataframe
+            stats = features_df.loc[player_id]
+            # Also get the raw headshot count from player_stats for display
+            raw_headshots = int(player_stats.loc[player_id, 'headshot'])
+
             suspicious_players_list.append({
                 'player_id': player_id,
-                'reason': 'Anomalous behavior detected by Isolation Forest model',
-                'event_counts': event_counts_data
+                'reason': 'Anomalous KDR/HS Ratio detected by Isolation Forest model',
+                'stats': {
+                    'kdr': round(stats['kdr'], 2),
+                    'hs_ratio': round(stats['hs_ratio'] * 100, 1), # As percentage
+                    'total_kills': int(stats['total_kills']), # Send total kills
+                    'deaths': int(stats['death']),
+                    'headshots': raw_headshots # Send raw headshot count
+                }
             })
 
-        suspicious_players_list.sort(key=lambda p: p['event_counts'].get('headshot', 0), reverse=True)
+        # Sort by KDR or HS Ratio for better presentation
+        suspicious_players_list.sort(key=lambda p: p['stats']['kdr'], reverse=True)
+        # print(f"DEBUG (Suspicious): Final list length: {len(suspicious_players_list)}") # Optional Debug
         return jsonify(suspicious_players_list)
 
     except Exception as e:
@@ -137,59 +186,44 @@ def get_suspicious_players():
 # --- END ISOLATION FOREST ENDPOINT ---
 
 
-# --- FINAL EVENT SUMMARY ENDPOINT (Auto-detect Timestamp Format) ---
+# --- EVENT SUMMARY ENDPOINT (No changes needed here) ---
 @app.route("/api/event-summary", methods=['GET'])
 def get_event_summary():
-    # print("\n--- Request received for /api/event-summary ---") # Debugging removed
     try:
-        events = Event.query.all() # Fetch ALL events
-        if not events:
-            # print("DEBUG (Summary): No events found in database.") # Debugging removed
-            return jsonify([])
-
+        events = Event.query.all()
+        if not events: return jsonify([])
         data = [{'timestamp': event.timestamp, 'event_type': event.event_type} for event in events]
         df = pd.DataFrame(data)
-        if df.empty:
-            return jsonify([])
+        if df.empty: return jsonify([])
 
-        # --- Revert to Auto-Detect Format ---
         df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce', utc=True)
-        # --- End Revert ---
+        df = df.dropna(subset=['timestamp'])
+        if df.empty: return jsonify([])
 
-        df = df.dropna(subset=['timestamp']) # Drop rows where conversion failed
-        if df.empty:
-            return jsonify([])
-
-        # Set index for resampling
         df = df.set_index('timestamp')
+        summary = df.groupby(pd.Grouper(freq='5min'))['event_type'].value_counts().unstack(fill_value=0)
 
-        # Aggregate by 15-minute intervals (Adjust freq if needed)
-        summary = df.groupby(pd.Grouper(freq='2min'))['event_type'].value_counts().unstack(fill_value=0)
-        if summary.empty:
-             return jsonify([])
-
+        if summary.empty: return jsonify([])
         summary = summary.reset_index()
-
-        # Format timestamp for display
         summary['timestamp'] = summary['timestamp'].dt.strftime('%Y-%m-%d %H:%M')
 
-        # Ensure all expected event types exist as columns
-        all_event_types = ['player_login', 'player_logout', 'player_move', 'item_pickup', 'headshot']
+        all_event_types = [
+            'player_login', 'player_logout', 'player_move', 'kill', 'death',
+            'objective_capture', 'reload', 'grenade_throw', 'weapon_pickup', 'headshot'
+        ]
         for event_type in all_event_types:
             if event_type not in summary.columns:
                 summary[event_type] = 0
-
         summary = summary[['timestamp'] + all_event_types]
 
         chart_data = summary.to_dict(orient='records')
-
         return jsonify(chart_data)
 
     except Exception as e:
-        print(f"ERROR processing event summary: {e}") # Use ERROR for exceptions
-        print(traceback.format_exc()) # Print full traceback for errors
+        print(f"ERROR processing event summary: {e}")
+        print(traceback.format_exc())
         return jsonify({"error": f"Failed to generate summary: {e}"}), 500
+# --- END EVENT SUMMARY ---
 
 if __name__ == '__main__':
-    # Use standard app.run
     app.run(debug=True, use_reloader=False)

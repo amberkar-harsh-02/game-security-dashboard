@@ -13,8 +13,28 @@
 .table-container {
   width: 90%;
   margin: 20px auto;
-  text-align: left; /* Aligns container content to the left */
+  text-align: left; /* Keep table titles left-aligned */
 }
+
+/* --- FIX 1: Target chart title specifically for centering --- */
+.chart-container {
+  width: 90%;
+  margin: 40px auto;
+  background-color: #282c34;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: left; /* Center the content (like the h2) */
+}
+
+.chart-container h2 {
+  /* Keep inline-block for border length, respects text-align: center from parent */
+  display: inline-block;
+  border-bottom: 2px solid #4CAF50;
+  padding-bottom: 5px;
+  margin-bottom: 20px; /* Add space below title */
+}
+/* --- END FIX 1 --- */
+
 
 table {
   width: 100%;
@@ -34,19 +54,21 @@ th {
 }
 
 tr:nth-child(even) {
-  background-color: #333;
+  background-color: #333; /* Use a slightly different dark shade if needed */
 }
 
-h2 {
+/* Keep other h2s left-aligned */
+.table-container h2 {
+  text-align: left;
+  display: inline-block; /* Ensure border fits text */
   border-bottom: 2px solid #4CAF50;
   padding-bottom: 5px;
-  display: inline-block; /* Shrinks border to fit text */
 }
 
-/* Your custom style for suspicious rows */
+
 .suspicious-row {
-  background-color: #BF092F !important;
-  filter: saturate(50%);
+  background-color: #BF092F !important; /* Your custom red */
+  filter: saturate(50%); /* Keep if desired */
   font-weight: bold;
 }
 
@@ -57,37 +79,62 @@ h2 {
   margin-bottom: -10px; /* Pulls the table closer */
 }
 
-/* --- NEW STYLES for the filter controls --- */
-
 .filter-controls {
-  display: flex;
-  gap: 10px; /* Adds space between the dropdown and the input */
-  align-items: center; /* Vertically aligns the label, select, and input */
+ display: flex;
+ align-items: center;
+ gap: 10px; /* Add space between filter elements */
 }
 
 .filter-label {
-  font-size: 14px;
-  font-weight: bold;
-  margin-right: 5px;
+  margin-right: 5px; /* Space before dropdown */
 }
 
-.filter-select {
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #4CAF50;
-  background-color: #333;
-  color: white;
-  font-size: 14px;
-  height: 35px; /* Match input height */
-}
-
+.filter-select,
 .filter-input {
   padding: 8px;
   border-radius: 4px;
   border: 1px solid #4CAF50;
-  background-color: #333;
+  background-color: #444; /* Slightly lighter than input bg */
   color: white;
   font-size: 14px;
-  height: 35px; /* Explicit height */
+}
+
+.filter-input {
+  background-color: #333;
+}
+
+/* Recharts Tooltip Style */
+.recharts-tooltip-wrapper {
+  background-color: #282c34 !important;
+  border: 1px solid #4CAF50 !important;
+  border-radius: 4px !important;
+}
+
+.recharts-tooltip-label {
+  color: white !important;
+}
+
+/* UI Polish Styles */
+.refreshing-indicator {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(76, 175, 80, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 10;
+}
+
+.error-message {
+  width: 90%;
+  margin: 20px auto;
+  padding: 15px;
+  background-color: #8b0000;
+  color: white;
+  border: 1px solid #ff0000;
+  border-radius: 8px;
+  text-align: center;
 }
 
