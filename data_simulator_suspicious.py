@@ -51,20 +51,20 @@ def send_test_event(event_type):
     }
     # Add specific details based on event type
     if event_type == 'headshot' or event_type == 'kill':
+        # Use a weapon suitable for headshots/kills
         event['details']['weapon'] = random.choice([w for w in COD_WEAPONS if w not in ['RPG-7', 'Combat Knife', 'Frag Grenade', 'Semtex', 'Throwing Knife']])
         event['details']['victim_id'] = f"player_{random.randint(1000, 9999)}"
-        while event['details']['victim_id'] == SUSPICIOUS_PLAYER_ID:
+        while event['details']['victim_id'] == SUSPICIOUS_PLAYER_ID: # Ensure not self-kill
              event['details']['victim_id'] = f"player_{random.randint(1000, 9999)}"
     elif event_type == 'player_move':
          event['details']['location_start'] = f"({random.randint(0, 100)}, {random.randint(0, 100)})"
          event['details']['location_end'] = f"({random.randint(0, 100)}, {random.randint(0, 100)})"
-    # --- NEW: Add details for death event ---
     elif event_type == 'death':
         event['details']['killer_id'] = f"player_{random.randint(1000, 9999)}"
         while event['details']['killer_id'] == SUSPICIOUS_PLAYER_ID: # Ensure not self-death source
             event['details']['killer_id'] = f"player_{random.randint(1000, 9999)}"
         event['details']['weapon'] = random.choice(COD_WEAPONS)
-    # --- END NEW ---
+    # Add other event type details if needed for testing specific scenarios
 
 
     try:
@@ -73,7 +73,7 @@ def send_test_event(event_type):
             print(f"Sent {event_type} event for {SUSPICIOUS_PLAYER_ID} at {current_time_utc}")
         else:
             print(f"Failed to send {event_type} event. Status: {response.status_code}")
-            print(f"Response: {response.text}")
+            print(f"Response: {response.text}") # Print error response text
 
     except requests.exceptions.ConnectionError:
         print("Connection Error: Flask server not running?")
@@ -83,16 +83,16 @@ def send_test_event(event_type):
 if __name__ == "__main__":
     print(f"--- Sending CoD-style test data for suspicious player: {SUSPICIOUS_PLAYER_ID} ---")
 
-    # Send 5 headshots
+    # Send 5 headshots (These count towards total_kills)
     print("\nSending 5 headshot events...")
     success = True
     for _ in range(5):
         if not send_test_event('headshot'):
             success = False
             break
-        time.sleep(0.1)
+        time.sleep(0.1) # Small delay
 
-    # Send 2 moves
+    # Send 2 moves (Contributes to total_events for move_ratio)
     if success:
         print("\nSending 2 move events...")
         for _ in range(2):
@@ -101,15 +101,11 @@ if __name__ == "__main__":
                 break
             time.sleep(0.1)
 
-    # --- NEW: Send 2 death events ---
-    if success:
-        print("\nSending 2 death events...")
-        for _ in range(2):
-            if not send_test_event('death'):
-                success = False
-                break
-            time.sleep(0.1)
-    # --- END NEW ---
+    # Optional: Add other events like reloads or grenade throws if needed for testing ratios
+    # if success:
+    #     print("\nSending 1 reload event...")
+    #     send_test_event('reload')
+    #     time.sleep(0.1)
 
     if success:
         print("\n--- Test data sent successfully ---")

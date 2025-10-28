@@ -1,3 +1,4 @@
+/* --- Keep all existing styles above --- */
 .App {
   text-align: center;
   background-color: #282c34;
@@ -16,25 +17,22 @@
   text-align: left; /* Keep table titles left-aligned */
 }
 
-/* --- FIX 1: Target chart title specifically for centering --- */
+/* Center chart title */
 .chart-container {
   width: 90%;
   margin: 40px auto;
-  background-color: #282c34;
+  background-color: #282c34; /* Match app background */
   padding: 20px;
   border-radius: 8px;
-  text-align: left; /* Center the content (like the h2) */
+  text-align: center; /* Center the content (like the h2) */
 }
 
 .chart-container h2 {
-  /* Keep inline-block for border length, respects text-align: center from parent */
   display: inline-block;
   border-bottom: 2px solid #4CAF50;
   padding-bottom: 5px;
-  margin-bottom: 20px; /* Add space below title */
+  margin-bottom: 20px;
 }
-/* --- END FIX 1 --- */
-
 
 table {
   width: 100%;
@@ -54,13 +52,13 @@ th {
 }
 
 tr:nth-child(even) {
-  background-color: #333; /* Use a slightly different dark shade if needed */
+  background-color: #333;
 }
 
-/* Keep other h2s left-aligned */
+/* Keep table titles left-aligned */
 .table-container h2 {
   text-align: left;
-  display: inline-block; /* Ensure border fits text */
+  display: inline-block;
   border-bottom: 2px solid #4CAF50;
   padding-bottom: 5px;
 }
@@ -68,7 +66,7 @@ tr:nth-child(even) {
 
 .suspicious-row {
   background-color: #BF092F !important; /* Your custom red */
-  filter: saturate(50%); /* Keep if desired */
+  filter: saturate(50%);
   font-weight: bold;
 }
 
@@ -76,17 +74,17 @@ tr:nth-child(even) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: -10px; /* Pulls the table closer */
+  margin-bottom: -10px;
 }
 
 .filter-controls {
  display: flex;
  align-items: center;
- gap: 10px; /* Add space between filter elements */
+ gap: 10px;
 }
 
 .filter-label {
-  margin-right: 5px; /* Space before dropdown */
+ margin-right: 5px;
 }
 
 .filter-select,
@@ -94,7 +92,7 @@ tr:nth-child(even) {
   padding: 8px;
   border-radius: 4px;
   border: 1px solid #4CAF50;
-  background-color: #444; /* Slightly lighter than input bg */
+  background-color: #444;
   color: white;
   font-size: 14px;
 }
@@ -138,3 +136,101 @@ tr:nth-child(even) {
   text-align: center;
 }
 
+
+/* --- NEW: Modal and Clickable ID Styles --- */
+
+/* Style for clickable player IDs */
+.clickable-player-id {
+  color: #61dafb; /* React blue color */
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease-in-out;
+}
+
+.clickable-player-id:hover {
+  color: #ffffff; /* White on hover */
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed; /* Sit on top of the page content */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Black background with opacity */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Make sure it's above everything else */
+}
+
+/* Modal Content Box */
+.modal-content {
+  background-color: #282c34; /* Match app background */
+  padding: 25px;
+  border-radius: 8px;
+  border: 1px solid #4CAF50;
+  width: 80%;
+  max-width: 700px; /* Max width */
+  max-height: 80vh; /* Max height */
+  overflow-y: auto; /* Add scroll if content is too tall */
+  position: relative; /* Needed for positioning the close button */
+  color: white; /* Ensure text is white */
+}
+
+/* Modal Close Button */
+.modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #444;
+  color: white;
+  border: 1px solid #666;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-close-button:hover {
+  background: #666;
+}
+
+/* Spacing within the modal */
+.modal-stats, .modal-events {
+  margin-top: 20px;
+  text-align: left; /* Align text inside sections */
+}
+
+.modal-stats h3, .modal-events h3 {
+  border-bottom: 1px solid #4CAF50;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.modal-stats p {
+  margin: 5px 0;
+}
+
+/* Table specifically inside the modal */
+.modal-event-table {
+  width: 100%; /* Make table fill modal width */
+  margin-top: 10px; /* Space above table */
+}
+
+.modal-event-table th, .modal-event-table td {
+  font-size: 12px; /* Slightly smaller text in modal table */
+  padding: 5px;
+  border-color: #555; /* Lighter border */
+}
+
+.modal-event-table th {
+  background-color: #3a8a3d; /* Slightly darker green */
+}
+/* --- END NEW STYLES --- */
