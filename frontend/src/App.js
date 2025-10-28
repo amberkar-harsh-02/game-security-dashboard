@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import './App.css'; // Ensure CSS path is correct
+// Ensure this path is correct relative to App.js (should be in the same src folder)
+import './App.css';
 
-// --- Read Base URL from Environment Variable ---
-// Reads from .env file during build, falls back to localhost for local development (npm start)
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:5000';
-// --- END ---
-
-// Define API endpoints using the base URL
-const EVENTS_API_URL = `${API_BASE_URL}/api/get-events`;
-const SUSPICIOUS_API_URL = `${API_BASE_URL}/api/suspicious-players`;
-const SUMMARY_API_URL = `${API_BASE_URL}/api/event-summary`;
-const SOCKET_URL = API_BASE_URL; // Socket.IO usually runs on the same base URL
+// --- REVERTED: Hardcode URLs back to localhost ---
+const EVENTS_API_URL = 'http://127.0.0.1:5000/api/get-events';
+const SUSPICIOUS_API_URL = 'http://127.0.0.1:5000/api/suspicious-players';
+const SUMMARY_API_URL = 'http://127.0.0.1:5000/api/event-summary';
+const SOCKET_URL = 'http://127.0.0.1:5000'; // Socket.IO usually runs on the same base URL
+// --- END REVERT ---
 
 function App() {
   const [events, setEvents] = useState([]);
