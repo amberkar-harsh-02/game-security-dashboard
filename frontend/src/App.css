@@ -24,7 +24,7 @@
   background-color: #282c34; /* Match app background */
   padding: 20px;
   border-radius: 8px;
-  text-align: center; /* Center the content (like the h2) */
+  text-align: left; /* Center the content (like the h2) */
 }
 
 .chart-container h2 {

@@ -101,11 +101,10 @@ if __name__ == "__main__":
                 break
             time.sleep(0.1)
 
-    # Optional: Add other events like reloads or grenade throws if needed for testing ratios
-    # if success:
-    #     print("\nSending 1 reload event...")
-    #     send_test_event('reload')
-    #     time.sleep(0.1)
+    if success:
+        print("\nSending 1 reload event...")
+        send_test_event('reload')
+        time.sleep(0.1)
 
     if success:
         print("\n--- Test data sent successfully ---")
