@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/[http://amberkar-harsh-02.github.io/game-security-dashboard](http://amberkar-harsh-02.github.io/game-security-dashboard)/static/css/main.960fa4cc.css",
+    "main.js": "/[http://amberkar-harsh-02.github.io/game-security-dashboard](http://amberkar-harsh-02.github.io/game-security-dashboard)/static/js/main.09f1cd03.js",
+    "static/js/453.8701dc61.chunk.js": "/[http://amberkar-harsh-02.github.io/game-security-dashboard](http://amberkar-harsh-02.github.io/game-security-dashboard)/static/js/453.8701dc61.chunk.js",
+    "index.html": "/[http://amberkar-harsh-02.github.io/game-security-dashboard](http://amberkar-harsh-02.github.io/game-security-dashboard)/index.html",
+    "main.960fa4cc.css.map": "/[http://amberkar-harsh-02.github.io/game-security-dashboard](http://amberkar-harsh-02.github.io/game-security-dashboard)/static/css/main.960fa4cc.css.map",
+    "main.09f1cd03.js.map": "/[http://amberkar-harsh-02.github.io/game-security-dashboard](http://amberkar-harsh-02.github.io/game-security-dashboard)/static/js/main.09f1cd03.js.map",
+    "453.8701dc61.chunk.js.map": "/[http://amberkar-harsh-02.github.io/game-security-dashboard](http://amberkar-harsh-02.github.io/game-security-dashboard)/static/js/453.8701dc61.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.960fa4cc.css",
+    "static/js/main.09f1cd03.js"
+  ]
+}
