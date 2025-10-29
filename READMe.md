@@ -15,6 +15,8 @@ This project is a full-stack web application designed to monitor simulated real-
     * Uses Scikit-learn's `IsolationForest` model to identify players with anomalous feature patterns.
     * Provides a basic explanation for why a player was flagged (e.g., "Anomaly: High KDR, Low Move Ratio").
 * **Dynamic Security Dashboard (React Frontend):**
+  ![Main Dashboard View](screenshots/dashboard_main.png)
+  ![Live event Log View](screenshots/live_event.png)
     * Displays a list of players flagged as suspicious, showing key performance stats (KDR, HS%, Move%, etc.).
     * Visualizes event frequency over time using a line chart (Recharts), aggregated into 5-minute intervals.
     * Shows a filterable live log of all incoming game events.
@@ -22,6 +24,9 @@ This project is a full-stack web application designed to monitor simulated real-
     * Features real-time updates using WebSockets (`Flask-SocketIO` and `socket.io-client`), automatically refreshing data when new events arrive.
     * Includes loading/error indicators for a better user experience.
 * **Data Simulation:** Python scripts generate random CoD-style events or specific suspicious patterns for testing.
+
+* **Player Drill-Down:** Clickable player IDs open a model with details.
+    ![Player Detail Model](screenshots/player_model.png)
 
 ## Tech Stack Used
 
