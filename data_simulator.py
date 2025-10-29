@@ -3,7 +3,8 @@ import json
 from faker import Faker
 import random
 import time
-from datetime import datetime, timezone
+from datetime import datetime
+import pytz
 
 # Initialize Faker
 fake = Faker()
@@ -34,20 +35,22 @@ OBJECTIVE_TYPES = ['Domination Flag B', 'Hardpoint Hill 3', 'HQ Capture', 'Bomb 
 MAPS = ['Shoot House', 'Hackney Yard', 'Crash', 'Shipment']
 MODES = ['TDM', 'Domination', 'Hardpoint', 'S&D']
 
+pacific_tz = pytz.timezone('America/Los_Angeles')
+
 def generate_game_event():
     """Generates a single fake Call of Duty style game event."""
     selected_event_type = random.choice(COD_EVENT_TYPES)
 
     # Use standard YYYY-MM-DDTHH:MM:SSZ format
-    current_time_utc_dt = datetime.now(timezone.utc)
-    current_time_utc = current_time_utc_dt.isoformat(timespec='seconds').replace('+00:00', 'Z')
+    current_time_pdt_dt = datetime.now(pacific_tz)
+    current_time_pdt = current_time_pdt_dt.isoformat(timespec='seconds')
 
     # Base event structure
     event = {
         'event_id': fake.uuid4(),
         'player_id': f"player_{random.randint(1000, 9999)}",
         'event_type': selected_event_type,
-        'timestamp': current_time_utc,
+        'timestamp': current_time_pdt,
         'details': {
             'map': random.choice(MAPS),
             'mode': random.choice(MODES)
@@ -106,5 +109,7 @@ def send_event(event):
         print(f"Connection Error: Could not connect to {API_ENDPOINT}.")
 
 if __name__ == "__main__":
-    game_event = generate_game_event()
-    send_event(game_event)
+    for i in range(10):
+        game_event = generate_game_event()
+        send_event(game_event)
+        time.sleep(0.1)

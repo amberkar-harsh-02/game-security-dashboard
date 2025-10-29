@@ -3,16 +3,19 @@ import json
 import random
 import time
 # --- Import datetime ---
-from datetime import datetime, timezone
+from datetime import datetime
 from faker import Faker
+import pytz
 
 fake = Faker()
 
 # Your API endpoint
 API_ENDPOINT = "http://127.0.0.1:5000/api/events"
 
+
+SUS_PLAYERS = ['f0rsaken', 'w3ak', 'che@terX']
 # Define the suspicious player ID
-SUSPICIOUS_PLAYER_ID = "player_f0rsaken" # Or your preferred test ID
+SUSPICIOUS_PLAYER_ID = f"player_{random.choice(SUS_PLAYERS)}"
 
 # --- CoD Weapons & Context ---
 COD_WEAPONS = [
@@ -31,19 +34,20 @@ MAPS = ['Shoot House', 'Hackney Yard', 'Crash', 'Shipment']
 MODES = ['TDM', 'Domination', 'Hardpoint', 'S&D']
 # --- END Context ---
 
+pacific_tz = pytz.timezone('America/Los_Angeles')
 
 def send_test_event(event_type):
     """Generates and sends a test event for the suspicious player with CoD details."""
     # --- Use standard YYYY-MM-DDTHH:MM:SSZ format ---
-    current_time_utc_dt = datetime.now(timezone.utc)
-    current_time_utc = current_time_utc_dt.isoformat(timespec='seconds').replace('+00:00', 'Z')
+    current_time_pdt_dt = datetime.now(pacific_tz)
+    current_time_pdt = current_time_pdt_dt.isoformat(timespec='seconds')
     # --- End Time Format ---
 
     event = {
         'event_id': fake.uuid4(),
         'player_id': SUSPICIOUS_PLAYER_ID,
         'event_type': event_type,
-        'timestamp': current_time_utc, # Use current time
+        'timestamp': current_time_pdt, # Use current time
         'details': {
             'map': random.choice(MAPS), # Add map context
             'mode': random.choice(MODES)  # Add game mode
@@ -70,7 +74,7 @@ def send_test_event(event_type):
     try:
         response = requests.post(API_ENDPOINT, json=event)
         if response.status_code == 201:
-            print(f"Sent {event_type} event for {SUSPICIOUS_PLAYER_ID} at {current_time_utc}")
+            print(f"Sent {event_type} event for {SUSPICIOUS_PLAYER_ID} at {current_time_pdt}")
         else:
             print(f"Failed to send {event_type} event. Status: {response.status_code}")
             print(f"Response: {response.text}") # Print error response text
@@ -81,12 +85,12 @@ def send_test_event(event_type):
     return True # Indicate success
 
 if __name__ == "__main__":
-    print(f"--- Sending CoD-style test data for suspicious player: {SUSPICIOUS_PLAYER_ID} ---")
+    print(f"--- Sending test data for suspicious player: {SUSPICIOUS_PLAYER_ID} ---")
 
     # Send 5 headshots (These count towards total_kills)
     print("\nSending 5 headshot events...")
     success = True
-    for _ in range(5):
+    for _ in range(7):
         if not send_test_event('headshot'):
             success = False
             break
@@ -95,7 +99,7 @@ if __name__ == "__main__":
     # Send 2 moves (Contributes to total_events for move_ratio)
     if success:
         print("\nSending 2 move events...")
-        for _ in range(2):
+        for _ in range(4):
             if not send_test_event('player_move'):
                 success = False
                 break

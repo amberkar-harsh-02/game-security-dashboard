@@ -5,6 +5,7 @@ from flask_socketio import SocketIO
 import json
 import pandas as pd
 import numpy as np
+import pytz
 from sklearn.ensemble import IsolationForest
 from datetime import datetime, timezone # Keep datetime
 import traceback # Keep traceback for error handling
@@ -212,7 +213,10 @@ def get_event_summary():
 
         if summary.empty: return jsonify([])
         summary = summary.reset_index()
-        summary['timestamp'] = summary['timestamp'].dt.strftime('%Y-%m-%d %H:%M')
+        # Convert aggregated UTC timestamps back to PDT for display
+        pacific_tz = pytz.timezone('America/Los_Angeles')
+        summary['timestamp'] = summary['timestamp'].dt.tz_convert(pacific_tz)
+        summary['timestamp'] = summary['timestamp'].dt.strftime('%Y-%m-%d %H:%M %Z')
 
         all_event_types = [
             'player_login', 'player_logout', 'player_move', 'kill', 'death',

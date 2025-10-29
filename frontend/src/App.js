@@ -155,7 +155,7 @@ function App() {
 
               {/* Event Summary Chart */}
               <div className="chart-container">
-                <h2>5-Minute Event Summary (All Time)</h2>
+                <h2>Event Summary (All Time)</h2>
                 {Array.isArray(chartData) && chartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
