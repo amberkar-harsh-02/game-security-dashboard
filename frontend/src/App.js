@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-// Ensure this path is correct relative to App.js (should be in the same src folder)
 import './App.css';
 
-// --- REVERTED: Hardcode URLs back to localhost ---
 const EVENTS_API_URL = 'http://127.0.0.1:5000/api/get-events';
 const SUSPICIOUS_API_URL = 'http://127.0.0.1:5000/api/suspicious-players';
 const SUMMARY_API_URL = 'http://127.0.0.1:5000/api/event-summary';
-const SOCKET_URL = 'http://127.0.0.1:5000'; // Socket.IO usually runs on the same base URL
-// --- END REVERT ---
+const SOCKET_URL = 'http://127.0.0.1:5000'; // Socket.IO runs on the same base URL
 
 function App() {
   const [events, setEvents] = useState([]);
@@ -121,16 +118,24 @@ function App() {
           <p>Loading dashboard...</p>
         ) : (
            <>
-              {/* Suspicious Players Table */}
+              {/* --- UPDATED: Suspicious Players Table Headers & Data Access --- */}
               <div className="table-container">
                 <h2>Suspicious Players (Flagged by ML Model)</h2>
                 <table>
                    <thead>
                     <tr>
-                      <th>Player ID</th><th>Reason</th>
-                      <th>KDR</th><th>HS %</th><th>Move %</th>
-                      <th>Total Kills</th><th>Deaths</th><th>Headshots</th>
-                      <th>Moves</th><th>Total Events</th>
+                      <th>Player ID</th>
+                      <th>Reason</th>
+                      <th>KDR</th>
+                      <th>HS %</th>
+                      <th>Move %</th>
+                      <th>KPM</th> {/* NEW Column */}
+                      <th>Total Kills</th>
+                      <th>Deaths</th>
+                      <th>Headshots</th>
+                      <th>Moves</th>
+                      <th>Total Events</th>
+                      <th>Session (min)</th> {/* NEW Column */}
                     </tr>
                    </thead>
                    <tbody>
@@ -138,24 +143,28 @@ function App() {
                       <tr key={player.player_id} className="suspicious-row">
                         <td><span className="clickable-player-id" onClick={() => handlePlayerClick(player.player_id)}>{player.player_id}</span></td>
                         <td>{player.reason}</td>
+                        {/* Access the corrected and new stats */}
                         <td>{player.stats?.kdr ?? 'N/A'}</td>
                         <td>{player.stats?.hs_ratio ?? 'N/A'}%</td>
                         <td>{player.stats?.move_ratio ?? 'N/A'}%</td>
+                        <td>{player.stats?.kpm ?? 'N/A'}</td> {/* NEW Data */}
                         <td>{player.stats?.total_kills ?? 'N/A'}</td>
                         <td>{player.stats?.deaths ?? 'N/A'}</td>
                         <td>{player.stats?.headshots ?? 'N/A'}</td>
                         <td>{player.stats?.moves ?? 'N/A'}</td>
                         <td>{player.stats?.total_events ?? 'N/A'}</td>
+                        <td>{player.stats?.session_minutes ?? 'N/A'}</td> {/* NEW Data */}
                       </tr>
                     ))}
                    </tbody>
                 </table>
                  {(!Array.isArray(suspiciousPlayers) || suspiciousPlayers.length === 0) && <p>No suspicious players found.</p>}
               </div>
+              {/* --- END UPDATED TABLE --- */}
 
               {/* Event Summary Chart */}
               <div className="chart-container">
-                <h2>Event Summary (All Time)</h2>
+                <h2>5-Minute Event Summary (All Time)</h2>
                 {Array.isArray(chartData) && chartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -221,11 +230,13 @@ function App() {
                  <p><strong>KDR:</strong> {selectedPlayerData.playerInfo.stats?.kdr ?? 'N/A'}</p>
                  <p><strong>HS %:</strong> {selectedPlayerData.playerInfo.stats?.hs_ratio ?? 'N/A'}%</p>
                  <p><strong>Move %:</strong> {selectedPlayerData.playerInfo.stats?.move_ratio ?? 'N/A'}%</p>
+                 <p><strong>KPM:</strong> {selectedPlayerData.playerInfo.stats?.kpm ?? 'N/A'}</p> {/* NEW */}
                  <p><strong>Total Kills:</strong> {selectedPlayerData.playerInfo.stats?.total_kills ?? 'N/A'}</p>
                  <p><strong>Deaths:</strong> {selectedPlayerData.playerInfo.stats?.deaths ?? 'N/A'}</p>
                  <p><strong>Headshots:</strong> {selectedPlayerData.playerInfo.stats?.headshots ?? 'N/A'}</p>
                  <p><strong>Moves:</strong> {selectedPlayerData.playerInfo.stats?.moves ?? 'N/A'}</p>
                  <p><strong>Total Events:</strong> {selectedPlayerData.playerInfo.stats?.total_events ?? 'N/A'}</p>
+                 <p><strong>Session (min):</strong> {selectedPlayerData.playerInfo.stats?.session_minutes ?? 'N/A'}</p> {/* NEW */}
                </div>
              ) : (
                <p><i>This player was not flagged as suspicious in the current data.</i></p>
